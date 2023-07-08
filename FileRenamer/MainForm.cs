@@ -12,7 +12,10 @@ namespace FileRenamer
         private ComboBox comboBox2;
         private TextBox textBoxNewName;
         private Panel panelDragDrop;
-        
+        private Label lblCombo1 ;
+        private Label lblCombo2 ;
+        private Label lblTxt1 ;
+
 
         public MainForm()
         {
@@ -30,6 +33,12 @@ namespace FileRenamer
             // Création des ComboBox
             comboBox1 = new ComboBox();
             comboBox2 = new ComboBox();
+            lblCombo1 = new Label();
+            lblCombo2 = new Label();
+            lblTxt1 = new Label();
+            
+            
+            
 
             // Ajout des choix prédéfinis
             comboBox1.Items.Add("meca");
@@ -42,9 +51,48 @@ namespace FileRenamer
             comboBox2.Items.Add("cinque");
             comboBox2.Items.Add("sixx");
 
+            comboBox1.FormattingEnabled = true;
+            comboBox2.FormattingEnabled = true;
+
             // Positionnement des ComboBox sur le formulaire
-            comboBox1.Location = new System.Drawing.Point(257, 87);
-            comboBox2.Location = new System.Drawing.Point(257, 156);
+            comboBox1.Location = new Point(227, 72);
+            comboBox2.Location = new Point(227, 140);
+
+            //taille des combo 
+            comboBox2.Size = new Size(152, 23);
+            comboBox1.Size = new Size(152, 23);
+            // 
+            // lblCombo1
+            // 
+            lblCombo1.AutoSize = true;
+            lblCombo1.Location = new Point(241, 44);
+            lblCombo1.Name = "lblCombo1";
+            lblCombo1.Size = new Size(131, 15);
+            lblCombo1.TabIndex = 4;
+            lblCombo1.Text = "selectionner le prefixe 1";
+            // 
+            // lblCombo2
+            // 
+            lblCombo2.AutoSize = true;
+            lblCombo2.Location = new Point(241, 111);
+            lblCombo2.Name = "lblCombo2";
+            lblCombo2.Size = new Size(131, 15);
+            lblCombo2.TabIndex = 5;
+            lblCombo2.Text = "selectionner le prefixe 2";
+            // 
+            // lblTxt1
+            // 
+            lblTxt1.AutoSize = true;
+            lblTxt1.Location = new Point(257, 183);
+            lblTxt1.Name = "lblTxt1";
+            lblTxt1.Size = new Size(93, 15);
+            lblTxt1.TabIndex = 6;
+            lblTxt1.Text = "saisir le prefixe 3";
+
+            // Ajout des labels au formulaire
+            Controls.Add(lblCombo1);
+            Controls.Add(lblCombo2);
+            Controls.Add(lblTxt1);
 
             // Ajout des ComboBox au formulaire
             Controls.Add(comboBox1);
@@ -54,7 +102,11 @@ namespace FileRenamer
             textBoxNewName = new TextBox();
 
             // Positionnement du TextBox sur le formulaire
-            textBoxNewName.Location = new System.Drawing.Point(257, 214);
+            textBoxNewName.Location = new Point(227, 213);
+
+
+            // size  du TextBox sur le formulaire
+            textBoxNewName.Size = new Size(152, 23);
 
             // Ajout du TextBox au formulaire
             Controls.Add(textBoxNewName);
@@ -63,9 +115,10 @@ namespace FileRenamer
             panelDragDrop = new Panel();
 
             // Positionnement du Panel sur le formulaire
-            panelDragDrop.Location = new System.Drawing.Point(165, 273);
-            panelDragDrop.Size = new System.Drawing.Size(200, 200);
+            panelDragDrop.Location = new Point(145, 287);
+            panelDragDrop.Size = new Size(323, 100);
             panelDragDrop.BorderStyle = BorderStyle.FixedSingle;
+            
 
             // Activation de la fonctionnalité de glisser-déposer sur le panel
             panelDragDrop.AllowDrop = true;
@@ -75,7 +128,7 @@ namespace FileRenamer
             // Ajout du Panel au formulaire
             Controls.Add(panelDragDrop);
         }
-       
+
 
         private void buttonRename_Click(object sender, EventArgs e)
         {
@@ -92,30 +145,13 @@ namespace FileRenamer
 
             try
             {
-                // SharePoint site URL
-                string siteUrl = "https://yoursharepointsiteurl";
-
-                // SharePoint target library relative URL
-                string libraryUrl = "/sites/yoursite/Shared Documents/";
-
-                // SharePoint credentials
-                string username = "id";
-                string password = "mdp";
-
-                // Connect to SharePoint site
-                SPClient.ClientContext clientContext = new SPClient.ClientContext(siteUrl);
-                clientContext.Credentials = new NetworkCredential(username, password);
-
-                // Get reference to the target library
-                SPClient.List targetLibrary = clientContext.Web.Lists.GetByTitle("Documents");
-                clientContext.Load(targetLibrary);
-                clientContext.ExecuteQuery();
+                
 
 
                 // Récupération du dossier "Documents" de l'utilisateur
                 string documentsPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "doc");
                 string[] existingFiles = Directory.GetFiles(documentsPath, "*", SearchOption.TopDirectoryOnly);
-                
+
 
                 // Parcours des fichiers dans le dossier "Documents"
                 foreach (string filePath in Directory.GetFiles(documentsPath))
@@ -132,20 +168,7 @@ namespace FileRenamer
                         // Chemin complet du nouveau fichier dans le dossier "Documents"
                         string newFilePath = Path.Combine(documentsPath, newFileName);
 
-                        // Lecture du fichier en tant que tableau d'octets
-                        byte[] fileContent = File.ReadAllBytes(filePath);
-
-                        // Création du fichier dans SharePoint
-                        SPClient.FileCreationInformation fileInfo = new SPClient.FileCreationInformation();
-                        fileInfo.Content = fileContent;
-                        fileInfo.Url = libraryUrl + newFileName;
-
-                        SPClient.File uploadedFile = targetLibrary.RootFolder.Files.Add(fileInfo);
-                        clientContext.Load(uploadedFile);
-                        clientContext.ExecuteQuery();
-
-                        // Suppression du fichier local après le téléchargement
-                        File.Delete(filePath);
+                        
                     }
                 }
 
