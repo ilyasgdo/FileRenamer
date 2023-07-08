@@ -1,6 +1,8 @@
 using System;
 using System.IO;
+using System.Net;
 using System.Windows.Forms;
+using SPClient = Microsoft.SharePoint.Client;
 
 namespace FileRenamer
 {
@@ -10,6 +12,7 @@ namespace FileRenamer
         private ComboBox comboBox2;
         private TextBox textBoxNewName;
         private Panel panelDragDrop;
+        
 
         public MainForm()
         {
@@ -29,12 +32,15 @@ namespace FileRenamer
             comboBox2 = new ComboBox();
 
             // Ajout des choix prédéfinis
-            comboBox1.Items.Add("selectiones");
-            comboBox1.Items.Add("un");
-            comboBox1.Items.Add("truc");
-            comboBox2.Items.Add("hello");
-            comboBox2.Items.Add("holla");
-            comboBox2.Items.Add("hallo");
+            comboBox1.Items.Add("meca");
+            comboBox1.Items.Add("as");
+            comboBox1.Items.Add("autreTRuc");
+            comboBox2.Items.Add("premierr");
+            comboBox2.Items.Add("deuxx");
+            comboBox2.Items.Add("troiss");
+            comboBox2.Items.Add("quatree");
+            comboBox2.Items.Add("cinque");
+            comboBox2.Items.Add("sixx");
 
             // Positionnement des ComboBox sur le formulaire
             comboBox1.Location = new System.Drawing.Point(257, 87);
@@ -69,6 +75,7 @@ namespace FileRenamer
             // Ajout du Panel au formulaire
             Controls.Add(panelDragDrop);
         }
+       
 
         private void buttonRename_Click(object sender, EventArgs e)
         {
@@ -83,11 +90,33 @@ namespace FileRenamer
                 return;
             }
 
-            // Récupération du dossier "Documents" de l'utilisateur
-            string documentsPath = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
-
             try
             {
+                // SharePoint site URL
+                string siteUrl = "https://yoursharepointsiteurl";
+
+                // SharePoint target library relative URL
+                string libraryUrl = "/sites/yoursite/Shared Documents/";
+
+                // SharePoint credentials
+                string username = "id";
+                string password = "mdp";
+
+                // Connect to SharePoint site
+                SPClient.ClientContext clientContext = new SPClient.ClientContext(siteUrl);
+                clientContext.Credentials = new NetworkCredential(username, password);
+
+                // Get reference to the target library
+                SPClient.List targetLibrary = clientContext.Web.Lists.GetByTitle("Documents");
+                clientContext.Load(targetLibrary);
+                clientContext.ExecuteQuery();
+
+
+                // Récupération du dossier "Documents" de l'utilisateur
+                string documentsPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "doc");
+                string[] existingFiles = Directory.GetFiles(documentsPath, "*", SearchOption.TopDirectoryOnly);
+                
+
                 // Parcours des fichiers dans le dossier "Documents"
                 foreach (string filePath in Directory.GetFiles(documentsPath))
                 {
@@ -97,22 +126,34 @@ namespace FileRenamer
                     // Vérification si le fichier correspond au nom sélectionné
                     if (fileName.StartsWith(selectedName))
                     {
-                        // Construction du nouveau nom de fichier avec le nouveau nom saisi et le suffixe sélectionné
-                        string newFileName = newName + "_" + selectedSuffix + Path.GetExtension(fileName);
+                        // Construction du nouveau nom de fichier avec le nouveau nom saisi, le suffixe sélectionné et le numéro unique
+                        string newFileName = $"{selectedName}_{selectedSuffix}_{newName}{Path.GetExtension(fileName)}";
 
                         // Chemin complet du nouveau fichier dans le dossier "Documents"
                         string newFilePath = Path.Combine(documentsPath, newFileName);
 
-                        // Renommage et déplacement du fichier vers le nouveau chemin
-                        File.Move(filePath, newFilePath);
+                        // Lecture du fichier en tant que tableau d'octets
+                        byte[] fileContent = File.ReadAllBytes(filePath);
+
+                        // Création du fichier dans SharePoint
+                        SPClient.FileCreationInformation fileInfo = new SPClient.FileCreationInformation();
+                        fileInfo.Content = fileContent;
+                        fileInfo.Url = libraryUrl + newFileName;
+
+                        SPClient.File uploadedFile = targetLibrary.RootFolder.Files.Add(fileInfo);
+                        clientContext.Load(uploadedFile);
+                        clientContext.ExecuteQuery();
+
+                        // Suppression du fichier local après le téléchargement
+                        File.Delete(filePath);
                     }
                 }
 
-                MessageBox.Show("Les fichiers ont été renommés avec succès.");
+                MessageBox.Show("Les fichiers ont été renommés et téléchargés avec succès dans SharePoint.");
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Une erreur s'est produite lors du renommage des fichiers : " + ex.Message);
+                MessageBox.Show("Une erreur s'est produite lors du renommage des fichiers et du téléchargement vers SharePoint : " + ex.Message);
             }
         }
 
@@ -140,14 +181,15 @@ namespace FileRenamer
                 string filePath = files[0];
                 string fileName = Path.GetFileName(filePath);
 
-                // Construction du nouveau nom de fichier avec le nouveau nom saisi et le suffixe sélectionné
+                // Construction du nouveau nom de fichier avec le nouveau nom saisi, le suffixe sélectionné et le numéro unique
                 string selectedName = comboBox1.SelectedItem?.ToString();
                 string selectedSuffix = comboBox2.SelectedItem?.ToString();
                 string newName = textBoxNewName.Text;
-                string newFileName = selectedName  + "_" +selectedSuffix  + "_" + newName + Path.GetExtension(fileName);
+                string newFileName = $"{selectedName}_{selectedSuffix}_{newName}{Path.GetExtension(fileName)}";
 
                 // Récupération du dossier "Documents" de l'utilisateur
-                string documentsPath = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+                string documentsPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "doc");
+
 
                 // Chemin complet du nouveau fichier dans le dossier "Documents"
                 string newFilePath = Path.Combine(documentsPath, newFileName);
@@ -165,6 +207,5 @@ namespace FileRenamer
                 }
             }
         }
-
     }
 }
