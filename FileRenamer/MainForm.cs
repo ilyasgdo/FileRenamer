@@ -12,9 +12,9 @@ namespace FileRenamer
         private ComboBox comboBox2;
         private TextBox textBoxNewName;
         private Panel panelDragDrop;
-        private Label lblCombo1 ;
-        private Label lblCombo2 ;
-        private Label lblTxt1 ;
+        private Label lblCombo1;
+        private Label lblCombo2;
+        private Label lblTxt1;
 
 
         public MainForm()
@@ -36,9 +36,9 @@ namespace FileRenamer
             lblCombo1 = new Label();
             lblCombo2 = new Label();
             lblTxt1 = new Label();
-            
-            
-            
+
+
+
 
             // Ajout des choix prédéfinis
             comboBox1.Items.Add("meca");
@@ -118,7 +118,7 @@ namespace FileRenamer
             panelDragDrop.Location = new Point(145, 287);
             panelDragDrop.Size = new Size(323, 100);
             panelDragDrop.BorderStyle = BorderStyle.FixedSingle;
-            
+
 
             // Activation de la fonctionnalité de glisser-déposer sur le panel
             panelDragDrop.AllowDrop = true;
@@ -145,7 +145,7 @@ namespace FileRenamer
 
             try
             {
-                
+
 
 
                 // Récupération du dossier "Documents" de l'utilisateur
@@ -168,7 +168,7 @@ namespace FileRenamer
                         // Chemin complet du nouveau fichier dans le dossier "Documents"
                         string newFilePath = Path.Combine(documentsPath, newFileName);
 
-                        
+
                     }
                 }
 
@@ -221,6 +221,9 @@ namespace FileRenamer
                 {
                     // Renommage et déplacement du fichier vers le nouveau chemin
                     File.Move(filePath, newFilePath);
+                    // Envoyer le fichier vers SharePoint
+                    UploadFileToSharePoint(newFilePath);
+
 
                     MessageBox.Show("Le fichier a été renommé et enregistré avec succès.");
                 }
@@ -230,5 +233,42 @@ namespace FileRenamer
                 }
             }
         }
+        private void UploadFileToSharePoint(string filePath)
+        {
+            using (SPClient.ClientContext context = new SPClient.ClientContext("https://your-sharepoint-site-url"))
+            {
+                // Authentification (remplacez "your-username" et "your-password" par vos informations d'identification SharePoint)
+                string userName = "your-username";
+                string password = "your-password";
+
+                context.Credentials = new NetworkCredential(userName, password);
+
+                // Obtention du site SharePoint
+                SPClient.Web web = context.Web;
+                context.Load(web);
+                context.ExecuteQuery();
+
+                // Chemin relatif du dossier SharePoint dans lequel vous souhaitez télécharger les fichiers
+                string targetFolderUrl = "Shared Documents/Folder/Subfolder";
+
+                // Chargement du dossier cible SharePoint
+                SPClient.Folder targetFolder = web.GetFolderByServerRelativeUrl(targetFolderUrl);
+                context.Load(targetFolder);
+                context.ExecuteQuery();
+
+                // Lecture du contenu du fichier
+                byte[] fileContent = File.ReadAllBytes(filePath);
+
+                // Création du fichier dans SharePoint
+                SPClient.FileCreationInformation fileInfo = new SPClient.FileCreationInformation();
+                fileInfo.Content = fileContent;
+                fileInfo.Url = Path.GetFileName(filePath);
+                SPClient.File newFile = targetFolder.Files.Add(fileInfo);
+                context.Load(newFile);
+                context.ExecuteQuery();
+            }
+        }
+
+
     }
 }
